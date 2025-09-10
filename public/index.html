@@ -8,16 +8,16 @@
     <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
     <script src="https://unpkg.com/jquery@3.6.4/dist/jquery.min.js"></script>
     <script src="./qrcode.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Lfree订阅转换 - 现代化的代理订阅转换工具</title>
 </head>
 
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black min-h-screen">
-    <!-- Background Pattern -->
+    <!-- Background Pattern - 简化移动端动画 -->
     <div class="fixed inset-0 z-0">
         <div class="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-white to-purple-50/20 dark:from-blue-950/30 dark:via-gray-900 dark:to-purple-950/30"></div>
-        <div class="absolute inset-0 opacity-30 dark:opacity-20">
+        <div class="absolute inset-0 opacity-20 dark:opacity-10 hidden sm:block">
             <div class="absolute top-0 left-0 w-96 h-96 bg-blue-300 dark:bg-blue-800 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-pulse"></div>
             <div class="absolute top-0 right-0 w-96 h-96 bg-purple-300 dark:bg-purple-800 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-pulse animation-delay-2000"></div>
             <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-300 dark:bg-pink-800 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-pulse animation-delay-4000"></div>
@@ -25,8 +25,8 @@
     </div>
 
   
-    <!-- Header -->
-    <header class="relative z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm border-b border-gray-200/50 dark:border-gray-700/50">
+    <!-- Header - 简化移动端 backdrop-blur -->
+    <header class="relative z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm sm:backdrop-blur-md shadow-sm border-b border-gray-200/50 dark:border-gray-700/50">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -346,8 +346,8 @@
         </div>
     </main>
 
-    <!-- Mobile Bottom Action Bar -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 p-3 z-30 sm:hidden">
+        <!-- Mobile Bottom Action Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/98 dark:bg-gray-900/98 backdrop-blur-sm sm:backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 p-3 z-30 sm:hidden">
         <div class="flex items-center justify-center space-x-3 max-w-sm mx-auto">
             <!-- Generate Button -->
             <button type="button" id="generateBtnMobile" 

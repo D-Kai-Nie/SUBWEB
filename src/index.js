@@ -170,13 +170,52 @@ function handleMobileAdvancedToggle(optionName) {
 // Initialize theme manager
 const themeManager = new ThemeManager();
 
-// Toast notification function
+// Optimize DOM queries with caching
+const domCache = new Map();
+
+function getCachedElement(id) {
+    if (!domCache.has(id)) {
+        const element = document.getElementById(id);
+        if (element) {
+            domCache.set(id, element);
+        }
+        return element;
+    }
+    return domCache.get(id);
+}
+
+// Clear cache when needed
+function clearDOMCache() {
+    domCache.clear();
+}
+
+// Toast notification function with optimized DOM operations
 function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toastMessage');
-    const toastIcon = document.getElementById('toastIcon');
+    const toast = getCachedElement('toast');
+    const toastMessage = getCachedElement('toastMessage');
+    const toastIcon = getCachedElement('toastIcon');
     
     if (!toast || !toastMessage || !toastIcon) return;
+    
+    // Clear any existing timeouts
+    if (toast.hideTimeout) {
+        clearTimeout(toast.hideTimeout);
+        toast.hideTimeout = null;
+    }
+    if (toast.cleanupTimeout) {
+        clearTimeout(toast.cleanupTimeout);
+        toast.cleanupTimeout = null;
+    }
+    
+    // Reset all animation states first
+    toast.classList.remove(
+        'hidden',
+        'translate-x-full', 
+        'translate-y-[-100px]', 
+        'opacity-0', 
+        'animate-slide-up',
+        'animate-fade-out'
+    );
     
     // Set message
     toastMessage.textContent = message;
@@ -204,47 +243,100 @@ function showToast(message, type = 'info') {
     
     // Show toast with animation
     const isMobile = window.innerWidth < 640;
-    toast.classList.remove('hidden');
+    
+    // Force reflow to ensure classes are applied
+    toast.offsetHeight;
+    
     if (isMobile) {
-        toast.classList.remove('translate-y-[-100px]', 'opacity-0');
-        toast.classList.add('animate-slide-up');
+        // Mobile: slide from top
+        toast.style.transform = 'translateY(-100px)';
+        toast.style.opacity = '0';
+        
+        // Use requestAnimationFrame to ensure proper timing
+        requestAnimationFrame(() => {
+            toast.classList.add('animate-slide-up');
+            toast.style.transform = '';
+            toast.style.opacity = '';
+        });
     } else {
-        toast.classList.remove('translate-x-full');
-        toast.classList.add('animate-slide-up');
+        // Desktop: slide from right
+        toast.style.transform = 'translateX(100%)';
+        
+        requestAnimationFrame(() => {
+            toast.classList.add('animate-slide-up');
+            toast.style.transform = '';
+        });
     }
     
-    // Hide toast after 2.5 seconds (faster)
-    setTimeout(() => {
-        if (isMobile) {
-            toast.classList.add('translate-y-[-100px]', 'opacity-0');
-        } else {
-            toast.classList.add('translate-x-full');
-        }
+    // Hide toast after 2.5 seconds
+    toast.hideTimeout = setTimeout(() => {
+        hideToastAnimation();
+    }, 2500);
+    
+    function hideToastAnimation() {
+        const currentIsMobile = window.innerWidth < 640;
+        
         toast.classList.remove('animate-slide-up');
+        toast.classList.add('animate-fade-out');
+        
+        if (currentIsMobile) {
+            toast.style.transform = 'translateY(-100px)';
+            toast.style.opacity = '0';
+        } else {
+            toast.style.transform = 'translateX(100%)';
+        }
+        
         // Completely hide after animation
-        setTimeout(() => {
+        toast.cleanupTimeout = setTimeout(() => {
             toast.classList.add('hidden');
-            toast.classList.remove('translate-y-[-100px]', 'opacity-0', 'translate-x-full');
-        }, 200); // Reduced from 300 to 200
-    }, 2500); // Reduced from 3000 to 2500
+            toast.classList.remove('animate-fade-out');
+            toast.style.transform = '';
+            toast.style.opacity = '';
+            
+            // Clear timeout references
+            toast.hideTimeout = null;
+            toast.cleanupTimeout = null;
+        }, 300); // Give enough time for animation
+    }
 }
 
-// Hide toast function for close button
+// Hide toast function for close button with cached DOM
 function hideToast() {
-    const toast = document.getElementById('toast');
+    const toast = getCachedElement('toast');
     if (toast) {
+        // Clear any existing timeouts
+        if (toast.hideTimeout) {
+            clearTimeout(toast.hideTimeout);
+            toast.hideTimeout = null;
+        }
+        if (toast.cleanupTimeout) {
+            clearTimeout(toast.cleanupTimeout);
+            toast.cleanupTimeout = null;
+        }
+        
         // Check if we're on mobile (screen width)
         const isMobile = window.innerWidth < 640;
-        if (isMobile) {
-            toast.classList.add('translate-y-[-100px]', 'opacity-0');
-        } else {
-            toast.classList.add('translate-x-full');
-        }
+        
         toast.classList.remove('animate-slide-up');
-        setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        
+        if (isMobile) {
+            toast.style.transform = 'translateY(-100px)';
+            toast.style.opacity = '0';
+        } else {
+            toast.style.transform = 'translateX(100%)';
+        }
+        
+        toast.cleanupTimeout = setTimeout(() => {
             toast.classList.add('hidden');
-            toast.classList.remove('translate-y-[-100px]', 'opacity-0', 'translate-x-full');
-        }, 200);
+            toast.classList.remove('animate-fade-out');
+            toast.style.transform = '';
+            toast.style.opacity = '';
+            
+            // Clear timeout references
+            toast.hideTimeout = null;
+            toast.cleanupTimeout = null;
+        }, 300);
     }
 }
 
@@ -305,11 +397,11 @@ function generateSubUrl(data) {
     copyText(subUrl);
 }
 
-// Initialize form elements
+// Initialize form elements with cached DOM access
 function initializeForm() {
     // Populate target select
-    const targetSelect = document.getElementById('target');
-    if (targetSelect) {
+    const targetSelect = getCachedElement('target');
+    if (targetSelect && targetSelect.options.length === 0) { // Only populate if empty
         targetConfig.forEach(option => {
             const opt = document.createElement('option');
             opt.value = option.value;
@@ -319,8 +411,8 @@ function initializeForm() {
     }
 
     // Populate config select
-    const configSelect = document.getElementById('config');
-    if (configSelect) {
+    const configSelect = getCachedElement('config');
+    if (configSelect && configSelect.options.length === 0) { // Only populate if empty
         externalConfig.forEach(group => {
             const optgroup = document.createElement('optgroup');
             optgroup.label = group.label;
@@ -678,7 +770,7 @@ function handleClashQrCode() {
     }
 }
 
-// Check backend version
+// Check backend version with optimized performance
 async function checkBackendVersion(backend) {
     try {
         // Extract base URL by removing '/sub?' or '/sub' from the end
@@ -686,7 +778,9 @@ async function checkBackendVersion(backend) {
         const versionUrl = baseUrl + '/version';
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        // Reduce timeout for mobile performance
+        const timeoutMs = window.innerWidth < 768 ? 3000 : 5000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         
         const response = await fetch(versionUrl, {
             method: 'GET',
@@ -822,37 +916,50 @@ async function initializeBackends() {
         }
     };
     
-    // Check all backends in parallel
-    const checkPromises = backendConfig.map(async (backend, index) => {
-        // Stagger the requests to avoid overwhelming the network
-        await new Promise(resolve => setTimeout(resolve, index * 100));
-        
-        const startTime = Date.now();
-        try {
-            const version = await checkBackendVersion(backend.value);
-            const responseTime = Date.now() - startTime;
+    // Check all backends in parallel with optimized concurrency
+    const maxConcurrent = window.innerWidth < 768 ? 3 : 6; // Limit concurrent requests on mobile
+    const backendChunks = [];
+    for (let i = 0; i < backendConfig.length; i += maxConcurrent) {
+        backendChunks.push(backendConfig.slice(i, i + maxConcurrent));
+    }
+    
+    // Process in chunks for better mobile performance
+    for (const chunk of backendChunks) {
+        const chunkPromises = chunk.map(async (backend, index) => {
+            // Stagger the requests to avoid overwhelming the network
+            const globalIndex = backendChunks.flat().indexOf(backend);
+            await new Promise(resolve => setTimeout(resolve, globalIndex * 100));
             
-            if (version) {
-                const result = {
-                    ...backend,
-                    version: version,
-                    responseTime: responseTime,
-                    label: backend.label,
-                    success: true
-                };
+            const startTime = Date.now();
+            try {
+                const version = await checkBackendVersion(backend.value);
+                const responseTime = Date.now() - startTime;
                 
-                backendResults.set(backend.value, result);
-                updateBackendList();
-                
-                return result;
+                if (version) {
+                    const result = {
+                        ...backend,
+                        version: version,
+                        responseTime: responseTime,
+                        label: backend.label,
+                        success: true
+                    };
+                    
+                    backendResults.set(backend.value, result);
+                    updateBackendList();
+                    
+                    return result;
+                }
+            } catch (error) {
+                // Backend failed
             }
-        } catch (error) {
-            // Backend failed
-        }
+            
+            backendResults.set(backend.value, { ...backend, success: false });
+            return null;
+        });
         
-        backendResults.set(backend.value, { ...backend, success: false });
-        return null;
-    });
+        // Wait for current chunk to complete before starting next
+        await Promise.all(chunkPromises);
+    }
     
     // Wait at least 1 second, then show initial results if any
     setTimeout(() => {
@@ -862,7 +969,7 @@ async function initializeBackends() {
     }, 1000);
     
     // Wait for all checks to complete
-    await Promise.all(checkPromises);
+    // await Promise.all(checkPromises); // 移除此行，因为已经在上面处理完成
     
     // Final update in case we didn't have any results after 1 second
     if (backendResults.size > 0) {

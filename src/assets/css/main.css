@@ -158,14 +158,17 @@
     }
 }
 
-/* Enhanced select dropdown */
+/* Enhanced select dropdown with mobile performance optimization */
 .select-enhanced {
     @apply relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.select-enhanced:hover {
-    transform: translateY(-2px);
+/* Only enable hover effects on desktop */
+@media (min-width: 640px) {
+    .select-enhanced:hover {
+        transform: translateY(-1px);
+    }
 }
 
 .select-enhanced select {
@@ -327,6 +330,21 @@
     }
 }
 
+.animate-fade-out {
+    animation: fade-out 0.3s ease-out forwards;
+}
+
+@keyframes fade-out {
+    from { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to { 
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
 .animate-slide-up {
     animation: slide-up 0.2s ease-out;
 }
@@ -395,6 +413,76 @@
     }
     .github-corner .octo-arm {
         animation: octocat-wave 560ms ease-in-out;
+    }
+}
+
+/* Mobile Performance Optimizations */
+@media (max-width: 640px) {
+    /* Use will-change for frequently animated elements */
+    .animate-spin, .animate-pulse, .animate-bounce {
+        will-change: transform;
+    }
+    
+    /* Reduce motion for users who prefer it */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+    
+    /* Optimize touch targets */
+    button, input, select, textarea {
+        touch-action: manipulation;
+    }
+    
+    /* Use CSS containment for better performance */
+    .card, .card-glass {
+        contain: layout style paint;
+    }
+    
+    /* Optimize font rendering */
+    body {
+        text-rendering: optimizeSpeed;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Reduce animation complexity for mobile devices */
+@media (max-width: 640px) {
+    /* Simplify animations on mobile */
+    .floating {
+        animation: none;
+    }
+    
+    .pulse-glow {
+        animation: none;
+        box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+    }
+    
+    /* Reduce blur effects on mobile for better performance */
+    .backdrop-blur-xl {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    
+    .backdrop-blur-md {
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+    
+    /* Optimize card glass effect for mobile */
+    .card-glass {
+        @apply bg-white/95 dark:bg-gray-900/95;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+    
+    /* Disable expensive transform effects on mobile */
+    .btn-primary:hover, .btn-secondary:hover {
+        transform: none;
     }
 }
 
