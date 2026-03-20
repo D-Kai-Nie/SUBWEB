@@ -55,21 +55,17 @@ export const targetConfig = [{
 }];
 export const backendConfig = [
     {
-        label: 'Lfree提供-负载均衡后端',
-        value: 'https://api.sub.zaoy.cn/sub?'
-    },
-    {
         label: 'CM提供-负载均衡后端',
         value: 'https://subapi.cmliussss.net/sub?'
     }, {
-        label: '品云提供-稳定后端',
-        value: 'https://v.id9.cc/sub?'
+        label: 'CM提供-应急备用后端',
+        value: 'https://subapi.fxxk.dedyn.io/sub?'
     }, {
         label: '肥羊提供-增强型后端',
         value: 'https://url.v1.mk/sub?'
     }, {
         label: '肥羊提供-备用后端',
-        value: 'https://sub.d1.mk/sub?'
+        value: 'https://api.v1.mk/sub?'
     }, {
         label: '自建服务',
         value: 'http://localhost:25500/sub?'

@@ -189,15 +189,19 @@ function clearDOMCache() {
     domCache.clear();
 }
 
-// Toast notification function with optimized DOM operations
-function showToast(message, type = 'info') {
-    const toast = getCachedElement('toast');
-    const toastMessage = getCachedElement('toastMessage');
-    const toastIcon = getCachedElement('toastIcon');
-    
-    if (!toast || !toastMessage || !toastIcon) return;
-    
-    // Clear any existing timeouts
+const TOAST_VISIBLE_DURATION = 3500;
+const TOAST_ANIMATION_DURATION = 300;
+const MAX_VISIBLE_TOASTS = 5;
+
+function isMobileViewport() {
+    return window.innerWidth < 640;
+}
+
+function getToastContainer() {
+    return getCachedElement('toastContainer');
+}
+
+function clearToastTimers(toast) {
     if (toast.hideTimeout) {
         clearTimeout(toast.hideTimeout);
         toast.hideTimeout = null;
@@ -206,137 +210,122 @@ function showToast(message, type = 'info') {
         clearTimeout(toast.cleanupTimeout);
         toast.cleanupTimeout = null;
     }
-    
-    // Reset all animation states first
-    toast.classList.remove(
-        'hidden',
-        'translate-x-full', 
-        'translate-y-[-100px]', 
-        'opacity-0', 
-        'animate-slide-up',
-        'animate-fade-out'
-    );
-    
-    // Set message
-    toastMessage.textContent = message;
-    
-    // Set icon and background based on type
+}
+
+function animateToastOut(toast) {
+    if (!toast || toast.dataset.closing === '1') return;
+
+    toast.dataset.closing = '1';
+    clearToastTimers(toast);
+
+    const currentIsMobile = isMobileViewport();
+    toast.style.transition = `transform ${TOAST_ANIMATION_DURATION}ms ease, opacity ${TOAST_ANIMATION_DURATION}ms ease`;
+    toast.style.transform = currentIsMobile ? 'translateY(-16px)' : 'translateX(calc(100% + 12px))';
+    toast.style.opacity = '0';
+
+    toast.cleanupTimeout = setTimeout(() => {
+        clearToastTimers(toast);
+        toast.remove();
+    }, TOAST_ANIMATION_DURATION);
+}
+
+function createToastElement(message, type) {
     const icons = {
         success: '<i class="fas fa-check-circle text-green-500 text-xl"></i>',
         error: '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>',
         info: '<i class="fas fa-info-circle text-blue-500 text-xl"></i>',
         warning: '<i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>'
     };
-    
-    // Set toast styling based on type with dark mode support
-    toast.firstElementChild.className = `bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-4 flex items-center space-x-4 border border-gray-200/50 dark:border-gray-600/50 ${
+
+    const borderClass =
         type === 'success' ? 'border-green-200/50 dark:border-green-700/50' :
         type === 'error' ? 'border-red-200/50 dark:border-red-700/50' :
         type === 'warning' ? 'border-yellow-200/50 dark:border-yellow-700/50' :
-        'border-blue-200/50 dark:border-blue-700/50'
-    }`;
-    
-    toastIcon.innerHTML = icons[type];
-    
-    // Update message text color for dark mode
-    toastMessage.className = 'text-sm font-semibold text-gray-900 dark:text-gray-100';
-    
-    // Show toast with animation
-    const isMobile = window.innerWidth < 640;
-    
-    // Force reflow to ensure classes are applied
-    toast.offsetHeight;
-    
-    if (isMobile) {
-        // Mobile: slide from top
-        toast.style.transform = 'translateY(-100px)';
-        toast.style.opacity = '0';
-        
-        // Use requestAnimationFrame to ensure proper timing
-        requestAnimationFrame(() => {
-            toast.classList.add('animate-slide-up');
-            toast.style.transform = '';
-            toast.style.opacity = '';
-        });
-    } else {
-        // Desktop: slide from right
-        toast.style.transform = 'translateX(100%)';
-        
-        requestAnimationFrame(() => {
-            toast.classList.add('animate-slide-up');
-            toast.style.transform = '';
+        'border-blue-200/50 dark:border-blue-700/50';
+
+    const toast = document.createElement('div');
+    toast.dataset.toastItem = '1';
+    toast.className = 'pointer-events-auto w-full sm:w-auto sm:max-w-md';
+    toast.innerHTML = `
+        <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-3 sm:p-4 flex items-center space-x-3 sm:space-x-4 border border-gray-200/50 dark:border-gray-600/50 ${borderClass}">
+            <div class="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center" data-toast-icon></div>
+            <div class="flex-grow min-w-0">
+                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 break-all" data-toast-message></p>
+            </div>
+            <button type="button" class="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-sm sm:text-base" aria-label="关闭提示">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+
+    const messageElement = toast.querySelector('[data-toast-message]');
+    if (messageElement) {
+        messageElement.textContent = message;
+    }
+
+    const iconElement = toast.querySelector('[data-toast-icon]');
+    if (iconElement) {
+        iconElement.innerHTML = icons[type] || icons.info;
+    }
+
+    const closeBtn = toast.querySelector('button');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            hideToast(toast);
         });
     }
-    
-    // Hide toast after 2.5 seconds
+
+    return toast;
+}
+
+// Toast notification function with optimized DOM operations
+function showToast(message, type = 'info') {
+    const container = getToastContainer();
+    if (!container) return;
+
+    const toast = createToastElement(message, type);
+    container.appendChild(toast);
+
+    const oldestToasts = container.querySelectorAll('[data-toast-item="1"]');
+    if (oldestToasts.length > MAX_VISIBLE_TOASTS) {
+        animateToastOut(oldestToasts[0]);
+    }
+
+    // Enter animation
+    const mobile = isMobileViewport();
+    toast.style.transition = `transform ${TOAST_ANIMATION_DURATION}ms ease, opacity ${TOAST_ANIMATION_DURATION}ms ease`;
+    toast.style.transform = mobile ? 'translateY(-16px)' : 'translateX(calc(100% + 12px))';
+    toast.style.opacity = '0';
+
+    // Force reflow to ensure start state is committed before animating in
+    void toast.offsetHeight;
+
+    requestAnimationFrame(() => {
+        if (toast.dataset.closing === '1') return;
+        toast.style.transform = mobile ? 'translateY(0)' : 'translateX(0)';
+        toast.style.opacity = '1';
+    });
+
+    // Hide toast after visible duration
     toast.hideTimeout = setTimeout(() => {
-        hideToastAnimation();
-    }, 2500);
-    
-    function hideToastAnimation() {
-        const currentIsMobile = window.innerWidth < 640;
-        
-        toast.classList.remove('animate-slide-up');
-        toast.classList.add('animate-fade-out');
-        
-        if (currentIsMobile) {
-            toast.style.transform = 'translateY(-100px)';
-            toast.style.opacity = '0';
-        } else {
-            toast.style.transform = 'translateX(100%)';
-        }
-        
-        // Completely hide after animation
-        toast.cleanupTimeout = setTimeout(() => {
-            toast.classList.add('hidden');
-            toast.classList.remove('animate-fade-out');
-            toast.style.transform = '';
-            toast.style.opacity = '';
-            
-            // Clear timeout references
-            toast.hideTimeout = null;
-            toast.cleanupTimeout = null;
-        }, 300); // Give enough time for animation
-    }
+        animateToastOut(toast);
+    }, TOAST_VISIBLE_DURATION);
 }
 
 // Hide toast function for close button with cached DOM
-function hideToast() {
-    const toast = getCachedElement('toast');
-    if (toast) {
-        // Clear any existing timeouts
-        if (toast.hideTimeout) {
-            clearTimeout(toast.hideTimeout);
-            toast.hideTimeout = null;
-        }
-        if (toast.cleanupTimeout) {
-            clearTimeout(toast.cleanupTimeout);
-            toast.cleanupTimeout = null;
-        }
-        
-        // Check if we're on mobile (screen width)
-        const isMobile = window.innerWidth < 640;
-        
-        toast.classList.remove('animate-slide-up');
-        toast.classList.add('animate-fade-out');
-        
-        if (isMobile) {
-            toast.style.transform = 'translateY(-100px)';
-            toast.style.opacity = '0';
-        } else {
-            toast.style.transform = 'translateX(100%)';
-        }
-        
-        toast.cleanupTimeout = setTimeout(() => {
-            toast.classList.add('hidden');
-            toast.classList.remove('animate-fade-out');
-            toast.style.transform = '';
-            toast.style.opacity = '';
-            
-            // Clear timeout references
-            toast.hideTimeout = null;
-            toast.cleanupTimeout = null;
-        }, 300);
+function hideToast(toast = null) {
+    if (toast && toast.dataset.toastItem === '1') {
+        animateToastOut(toast);
+        return;
+    }
+
+    const container = getToastContainer();
+    if (!container) return;
+
+    const activeToasts = container.querySelectorAll('[data-toast-item="1"]');
+    const latestToast = activeToasts[activeToasts.length - 1];
+    if (latestToast) {
+        animateToastOut(latestToast);
     }
 }
 
@@ -1315,6 +1304,6 @@ $(document).ready(() => {
 
     // Show welcome message
     setTimeout(() => {
-        showToast('欢迎使用 Lfree订阅转换工具！', 'info');
+        showToast('欢迎使用 在线订阅转换工具！', 'info');
     }, 500);
 });
