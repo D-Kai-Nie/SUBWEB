@@ -55,17 +55,14 @@ export const targetConfig = [{
 }];
 export const backendConfig = [
     {
+        label: 'Kai-自建后端',
+        value: 'https://kofogrtditqe.ap-northeast-1.clawcloudrun.com'
+    }, {
         label: 'CM提供-负载均衡后端',
         value: 'https://subapi.cmliussss.net/sub?'
     }, {
-        label: 'CM提供-应急备用后端',
-        value: 'https://subapi.fxxk.dedyn.io/sub?'
-    }, {
         label: '肥羊提供-增强型后端',
         value: 'https://url.v1.mk/sub?'
-    }, {
-        label: '肥羊提供-备用后端',
-        value: 'https://api.v1.mk/sub?'
     }, {
         label: '自建服务',
         value: 'http://localhost:25500/sub?'
@@ -227,12 +224,12 @@ export const externalConfig = [{
         value: 'https://cdn.jsdelivr.net/gh/SleepyHeeead/subconverter-config@master/remote-config/customized/ssrcloud.ini'
     }]
 }, {
-    label: '特殊规则',
+    label: 'Kai规则',
     options: [{
-        label: '网易云解锁-规则版',
-        value: 'https://cdn.jsdelivr.net/gh/SleepyHeeead/subconverter-config@master/remote-config/special/netease.ini'
+        label: '完整版-多国家策略',
+        value: 'https://raw.githubusercontent.com/D-Kai-Nie/ACL4SSR/refs/heads/master/Clash/config/ACL4SSR_Online_AdblockPlus.ini'
     }, {
-        label: '基础版-国内直连',
+        label: '基础版-去广告策略',
         value: 'https://cdn.jsdelivr.net/gh/SleepyHeeead/subconverter-config@master/remote-config/special/basic.ini'
     }]
 }];
