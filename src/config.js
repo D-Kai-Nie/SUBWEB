@@ -56,7 +56,7 @@ export const targetConfig = [{
 export const backendConfig = [
     {
         label: 'Kai-自建后端',
-        value: 'https://kofogrtditqe.ap-northeast-1.clawcloudrun.com'
+        value: 'https://bluesbrick-my-subconverter.hf.space'
     }, {
         label: 'CM提供-负载均衡后端',
         value: 'https://subapi.cmliussss.net/sub?'
